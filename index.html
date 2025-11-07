@@ -49,24 +49,15 @@
         // 3. Ve a Configuración del proyecto > Tus aplicaciones > Web
         // 4. Copia la configuración y reemplázala aquí abajo
         
-        // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBpIXR0m7Vz6im2JJZW7gr4nRKyU7tf-50",
-  authDomain: "mi-disciplina-app.firebaseapp.com",
-  databaseURL: "https://mi-disciplina-app-default-rtdb.firebaseio.com",
-  projectId: "mi-disciplina-app",
-  storageBucket: "mi-disciplina-app.firebasestorage.app",
-  messagingSenderId: "297051387067",
-  appId: "1:297051387067:web:5104c61263c1c5e1d5a59e"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            databaseURL: "https://TU_PROYECTO.firebaseio.com",
+            projectId: "TU_PROYECTO",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
 
         // Inicializar Firebase
         let firebaseApp = null;
@@ -1127,9 +1118,6 @@ const app = initializeApp(firebaseConfig);
                     </div>
 
                     {/* Pantalla de carga durante autenticación */}
-                    {isAuthenticating && firebaseEnabled ? (
-                        <div className="flex items-center justify-center min-h-[60vh]">
-                        {/* Pantalla de carga durante autenticación */}
                     {isAuthenticating && firebaseEnabled ? (
                         <div className="flex items-center justify-center min-h-[60vh]">
                             <div className="text-center">

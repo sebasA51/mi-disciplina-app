@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Disciplina - Organízate y Crece</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <link rel="manifest" href="#" id="manifest-placeholder">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .pulse-ring {
+            animation: pulse-ring 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        const { useState, useEffect, useCallback } = React;
+
+        // ============================================
+        // CONFIGURACIÓN DE FIREBASE
+        // ============================================
+        // INSTRUCCIONES: Reemplaza esto con tu configuración de Firebase
+        // 1. Ve a https://console.firebase.google.com/
+        // 2. Crea un nuevo proyecto (o usa uno existente)
+        // 3. Ve a Configuración del proyecto > Tus aplicaciones > Web
+        // 4. Copia la configuración y reemplázala aquí abajo
+        
+        // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBpIXR0m7Vz6im2JJZW7gr4nRKyU7tf-50",
+  authDomain: "mi-disciplina-app.firebaseapp.com",
+  databaseURL: "https://mi-disciplina-app-default-rtdb.firebaseio.com",
+  projectId: "mi-disciplina-app",
+  storageBucket: "mi-disciplina-app.firebasestorage.app",
+  messagingSenderId: "297051387067",
+  appId: "1:297051387067:web:5104c61263c1c5e1d5a59e"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+        // Inicializar Firebase
+        let firebaseApp = null;
+        let database = null;
+        let auth = null;
+        let userId = null;
+        let firebaseEnabled = false;
+
+        try {
+            // Verificar si la configuración es válida
+            if (firebaseConfig.apiKey !== "TU_API_KEY") {
+                firebaseApp = firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                auth = firebase.auth();
+                firebaseEnabled = true;
+                console.log('✅ Firebase inicializado correctamente');
+            } else {
+                console.log('⚠️ Usando modo LOCAL - Configura Firebase para sincronización');
+            }
+        } catch (error) {
+            console.log('⚠️ Error al inicializar Firebase, usando modo LOCAL:', error);
+        }
+
+        // Frases estoicas motivacionales
+        const frasesEstoicas = [
+            { frase: "No es lo que te sucede, sino cómo reaccionas lo que importa.", autor: "Epicteto" },
+            { frase: "Tienes poder sobre tu mente, no sobre los eventos externos. Date cuenta de esto, y encontrarás fuerza.", autor: "Marco Aurelio" },
+            { frase: "El impedimento para la acción hace avanzar la acción. Lo que se interpone en el camino se convierte en el camino.", autor: "Marco Aurelio" },
+            { frase: "La riqueza consiste no en tener grandes posesiones, sino en tener pocas necesidades.", autor: "Epicteto" },
+            { frase: "Si no es correcto, no lo hagas. Si no es verdad, no lo digas.", autor: "Marco Aurelio" },
+            { frase: "Lo que está bien para la colmena, está bien para la abeja.", autor: "Marco Aurelio" },
+            { frase: "No pierdas más tiempo discutiendo qué es un hombre bueno. Sé uno.", autor: "Marco Aurelio" },
+            { frase: "El mejor vinganza es no ser como tu enemigo.", autor: "Marco Aurelio" },
+            { frase: "Comienza cada día diciéndote a ti mismo: Hoy encontraré entrometidos, ingratos, violentos, traicioneros, envidiosos, insociables. Todo esto les ha pasado por su ignorancia de lo que es bueno y malo.", autor: "Marco Aurelio" },
+            { frase: "Si es soportable, sopórtalo. Deja de quejarte.", autor: "Marco Aurelio" },
+            { frase: "Primero di lo que serías; luego haz lo que tengas que hacer.", autor: "Epicteto" },
+            { frase: "No expliques tu filosofía. Encárnala.", autor: "Epicteto" },
+            { frase: "Exigimos más de nosotros mismos que de los demás.", autor: "Séneca" },
+            { frase: "La suerte es cuando la preparación se encuentra con la oportunidad.", autor: "Séneca" },
+            { frase: "Las dificultades fortalecen la mente, así como el trabajo fortalece el cuerpo.", autor: "Séneca" },
+            { frase: "No es porque las cosas sean difíciles que no nos atrevemos, es porque no nos atrevemos que son difíciles.", autor: "Séneca" },
+            { frase: "Cada nuevo día es una oportunidad para la virtud.", autor: "Marco Aurelio" },
+            { frase: "Cuando tengas que levantarte por la mañana, piensa qué privilegio es estar vivo, pensar, disfrutar, amar.", autor: "Marco Aurelio" },
+            { frase: "Lo que llamamos azar es quizás la lógica de Dios.", autor: "Marco Aurelio" },
+            { frase: "Nunca dejes que el futuro te perturbe. Lo enfrentarás con las mismas armas de la razón.", autor: "Marco Aurelio" },
+            { frase: "La acción es elocuente.", autor: "Epicteto" },
+            { frase: "No esperes a Platón. No esperes a Sócrates. Espérate a ti mismo.", autor: "Epicteto" },
+            { frase: "Solo hay un camino a la felicidad: dejar de preocuparse por cosas que están más allá del poder de nuestra voluntad.", autor: "Epicteto" },
+            { frase: "La verdadera felicidad es... disfrutar el presente, sin dependencia ansiosa del futuro.", autor: "Séneca" },
+            { frase: "A veces, incluso vivir es un acto de coraje.", autor: "Séneca" },
+            { frase: "No necesitamos más fuerza, sino un mejor uso de nuestra fuerza.", autor: "Marco Aurelio" },
+            { frase: "Si buscas la tranquilidad, haz menos. O más precisamente, haz lo necesario.", autor: "Marco Aurelio" },
+            { frase: "Concéntrate cada momento como un romano, como un hombre, en hacer lo que tienes entre manos con seriedad.", autor: "Marco Aurelio" },
+            { frase: "La vida es muy corta y ansiosa para aquellos que olvidan el pasado, descuidan el presente y temen el futuro.", autor: "Séneca" },
+            { frase: "Todos sufrimos. La diferencia está en cómo respondemos al sufrimiento.", autor: "Epicteto" }
+        ];
+
+        // Iconos SVG personalizados
+        const Icons = {
+            Check: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+            ),
+            Plus: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+            ),
+            Fire: () => (
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2c1.5 3 4 4.5 4 7.5 0 2.5-2 4.5-4 4.5s-4-2-4-4.5c0-3 2.5-4.5 4-7.5zm0 14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+            ),
+            Target: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            ),
+            Calendar: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            ),
+            Trash: () => (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            ),
+            Chart: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            ),
+            Star: () => (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+            ),
+            Folder: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+            ),
+            ChevronDown: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+            ),
+            ChevronRight: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+            )
+        };
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('habitos');
+            const [habitos, setHabitos] = useState([]);
+            const [tareas, setTareas] = useState([]);
+            const [proyectos, setProyectos] = useState([]);
+            const [showAddHabito, setShowAddHabito] = useState(false);
+            const [showAddTarea, setShowAddTarea] = useState(false);
+            const [showAddProyecto, setShowAddProyecto] = useState(false);
+            const [newHabito, setNewHabito] = useState('');
+            const [newTarea, setNewTarea] = useState({ texto: '', prioridad: 'media' });
+            const [newProyecto, setNewProyecto] = useState({ nombre: '', descripcion: '' });
+            const [proyectoExpandido, setProyectoExpandido] = useState(null);
+            const [nuevaTareaProyecto, setNuevaTareaProyecto] = useState({});
+            const [isAuthenticating, setIsAuthenticating] = useState(true);
+            const [syncStatus, setSyncStatus] = useState('local'); // 'local', 'syncing', 'synced', 'error'
+
+            // Obtener frase del día basada en la fecha
+            const getFraseDelDia = () => {
+                const hoy = new Date();
+                const diaDelAno = Math.floor((hoy - new Date(hoy.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+                return frasesEstoicas[diaDelAno % frasesEstoicas.length];
+            };
+
+            const fraseDelDia = getFraseDelDia();
+
+            // ============================================
+            // AUTENTICACIÓN Y SINCRONIZACIÓN CON FIREBASE
+            // ============================================
+            useEffect(() => {
+                if (!firebaseEnabled) {
+                    setIsAuthenticating(false);
+                    setSyncStatus('local');
+                    // Cargar datos del localStorage si Firebase no está disponible
+                    const habitosGuardados = localStorage.getItem('habitos');
+                    const tareasGuardadas = localStorage.getItem('tareas');
+                    const proyectosGuardados = localStorage.getItem('proyectos');
+                    
+                    if (habitosGuardados) setHabitos(JSON.parse(habitosGuardados));
+                    if (tareasGuardadas) setTareas(JSON.parse(tareasGuardadas));
+                    if (proyectosGuardados) setProyectos(JSON.parse(proyectosGuardados));
+                    return;
+                }
+
+                // Autenticación anónima con Firebase
+                const unsubscribe = auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log('✅ Usuario autenticado:', userId);
+                        setSyncStatus('synced');
+                        setIsAuthenticating(false);
+                        
+                        // Sincronizar datos con Firebase
+                        setupFirebaseListeners();
+                    } else {
+                        // Crear usuario anónimo
+                        try {
+                            const result = await auth.signInAnonymously();
+                            userId = result.user.uid;
+                            console.log('✅ Usuario anónimo creado:', userId);
+                        } catch (error) {
+                            console.error('Error en autenticación:', error);
+                            setSyncStatus('error');
+                            setIsAuthenticating(false);
+                        }
+                    }
+                });
+
+                return () => unsubscribe();
+            }, []);
+
+            // Configurar listeners de Firebase para sincronización en tiempo real
+            const setupFirebaseListeners = () => {
+                if (!firebaseEnabled || !userId) return;
+
+                // Listener para hábitos
+                database.ref(`users/${userId}/habitos`).on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        setHabitos(Object.values(data));
+                    }
+                });
+
+                // Listener para tareas
+                database.ref(`users/${userId}/tareas`).on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        setTareas(Object.values(data));
+                    }
+                });
+
+                // Listener para proyectos
+                database.ref(`users/${userId}/proyectos`).on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        setProyectos(Object.values(data));
+                    }
+                });
+            };
+
+            // Guardar en Firebase
+            const saveToFirebase = async (collection, data) => {
+                if (!firebaseEnabled || !userId) return;
+                
+                try {
+                    setSyncStatus('syncing');
+                    const dataObj = {};
+                    data.forEach(item => {
+                        dataObj[item.id] = item;
+                    });
+                    await database.ref(`users/${userId}/${collection}`).set(dataObj);
+                    setSyncStatus('synced');
+                } catch (error) {
+                    console.error(`Error guardando ${collection}:`, error);
+                    setSyncStatus('error');
+                }
+            };
+
+            // Guardar datos (Firebase o localStorage como fallback)
+            useEffect(() => {
+                if (habitos.length > 0) {
+                    if (firebaseEnabled && userId) {
+                        saveToFirebase('habitos', habitos);
+                    } else {
+                        localStorage.setItem('habitos', JSON.stringify(habitos));
+                    }
+                }
+            }, [habitos]);
+
+            useEffect(() => {
+                if (tareas.length > 0) {
+                    if (firebaseEnabled && userId) {
+                        saveToFirebase('tareas', tareas);
+                    } else {
+                        localStorage.setItem('tareas', JSON.stringify(tareas));
+                    }
+                }
+            }, [tareas]);
+
+            useEffect(() => {
+                if (proyectos.length > 0) {
+                    if (firebaseEnabled && userId) {
+                        saveToFirebase('proyectos', proyectos);
+                    } else {
+                        localStorage.setItem('proyectos', JSON.stringify(proyectos));
+                    }
+                }
+            }, [proyectos]);
+
+            // Funciones para hábitos
+            const agregarHabito = () => {
+                if (newHabito.trim()) {
+                    setHabitos([...habitos, {
+                        id: Date.now(),
+                        nombre: newHabito,
+                        completado: {},
+                        racha: 0,
+                        mejorRacha: 0,
+                        creado: new Date().toISOString()
+                    }]);
+                    setNewHabito('');
+                    setShowAddHabito(false);
+                }
+            };
+
+            const toggleHabito = (id) => {
+                const hoy = new Date().toDateString();
+                setHabitos(habitos.map(habito => {
+                    if (habito.id === id) {
+                        const nuevoCompletado = { ...habito.completado };
+                        const estabaCompletado = nuevoCompletado[hoy];
+                        
+                        if (estabaCompletado) {
+                            delete nuevoCompletado[hoy];
+                        } else {
+                            nuevoCompletado[hoy] = true;
+                        }
+
+                        // Calcular racha
+                        let racha = 0;
+                        let fecha = new Date();
+                        while (nuevoCompletado[fecha.toDateString()]) {
+                            racha++;
+                            fecha.setDate(fecha.getDate() - 1);
+                        }
+
+                        const mejorRacha = Math.max(habito.mejorRacha, racha);
+
+                        return {
+                            ...habito,
+                            completado: nuevoCompletado,
+                            racha,
+                            mejorRacha
+                        };
+                    }
+                    return habito;
+                }));
+            };
+
+            const eliminarHabito = (id) => {
+                if (confirm('¿Estás seguro de eliminar este hábito?')) {
+                    setHabitos(habitos.filter(h => h.id !== id));
+                }
+            };
+
+            // Funciones para tareas
+            const agregarTarea = () => {
+                if (newTarea.texto.trim()) {
+                    setTareas([...tareas, {
+                        id: Date.now(),
+                        texto: newTarea.texto,
+                        prioridad: newTarea.prioridad,
+                        completada: false,
+                        creada: new Date().toISOString()
+                    }]);
+                    setNewTarea({ texto: '', prioridad: 'media' });
+                    setShowAddTarea(false);
+                }
+            };
+
+            const toggleTarea = (id) => {
+                setTareas(tareas.map(t => 
+                    t.id === id ? { ...t, completada: !t.completada } : t
+                ));
+            };
+
+            const eliminarTarea = (id) => {
+                setTareas(tareas.filter(t => t.id !== id));
+            };
+
+            // Funciones para proyectos
+            const agregarProyecto = () => {
+                if (newProyecto.nombre.trim()) {
+                    setProyectos([...proyectos, {
+                        id: Date.now(),
+                        nombre: newProyecto.nombre,
+                        descripcion: newProyecto.descripcion,
+                        tareas: [],
+                        creado: new Date().toISOString()
+                    }]);
+                    setNewProyecto({ nombre: '', descripcion: '' });
+                    setShowAddProyecto(false);
+                }
+            };
+
+            const eliminarProyecto = (id) => {
+                if (confirm('¿Estás seguro de eliminar este proyecto y todas sus tareas?')) {
+                    setProyectos(proyectos.filter(p => p.id !== id));
+                }
+            };
+
+            const agregarTareaAProyecto = (proyectoId) => {
+                const textoTarea = nuevaTareaProyecto[proyectoId];
+                if (textoTarea && textoTarea.trim()) {
+                    setProyectos(proyectos.map(p => {
+                        if (p.id === proyectoId) {
+                            return {
+                                ...p,
+                                tareas: [...p.tareas, {
+                                    id: Date.now(),
+                                    texto: textoTarea,
+                                    completada: false,
+                                    creada: new Date().toISOString()
+                                }]
+                            };
+                        }
+                        return p;
+                    }));
+                    setNuevaTareaProyecto({ ...nuevaTareaProyecto, [proyectoId]: '' });
+                }
+            };
+
+            const toggleTareaProyecto = (proyectoId, tareaId) => {
+                setProyectos(proyectos.map(p => {
+                    if (p.id === proyectoId) {
+                        return {
+                            ...p,
+                            tareas: p.tareas.map(t => 
+                                t.id === tareaId ? { ...t, completada: !t.completada } : t
+                            )
+                        };
+                    }
+                    return p;
+                }));
+            };
+
+            const eliminarTareaProyecto = (proyectoId, tareaId) => {
+                setProyectos(proyectos.map(p => {
+                    if (p.id === proyectoId) {
+                        return {
+                            ...p,
+                            tareas: p.tareas.filter(t => t.id !== tareaId)
+                        };
+                    }
+                    return p;
+                }));
+            };
+
+            // Componente de Hábitos
+            const HabitosView = () => {
+                const hoy = new Date().toDateString();
+                const habitosCompletadosHoy = habitos.filter(h => h.completado[hoy]).length;
+                const porcentajeHoy = habitos.length > 0 ? Math.round((habitosCompletadosHoy / habitos.length) * 100) : 0;
+
+                return (
+                    <div className="space-y-4">
+                        {/* Resumen del día */}
+                        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 className="text-2xl font-bold">Hoy</h2>
+                                    <p className="text-indigo-100">Tu progreso diario</p>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-4xl font-bold">{porcentajeHoy}%</div>
+                                    <div className="text-sm text-indigo-100">{habitosCompletadosHoy}/{habitos.length} hábitos</div>
+                                </div>
+                            </div>
+                            <div className="bg-white bg-opacity-20 rounded-full h-3 overflow-hidden">
+                                <div 
+                                    className="bg-white h-full transition-all duration-500 rounded-full"
+                                    style={{ width: `${porcentajeHoy}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Lista de hábitos */}
+                        <div className="space-y-3">
+                            {habitos.map(habito => {
+                                const completadoHoy = habito.completado[hoy];
+                                return (
+                                    <div 
+                                        key={habito.id}
+                                        className="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow animate-slide-in"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => toggleHabito(habito.id)}
+                                                className={`flex-shrink-0 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                    completadoHoy
+                                                        ? 'bg-green-500 border-green-500 text-white'
+                                                        : 'border-gray-300 hover:border-indigo-500'
+                                                }`}
+                                            >
+                                                {completadoHoy && <Icons.Check />}
+                                            </button>
+                                            
+                                            <div className="flex-1">
+                                                <h3 className={`font-semibold text-lg ${completadoHoy ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                                                    {habito.nombre}
+                                                </h3>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    {habito.racha > 0 && (
+                                                        <div className="flex items-center gap-1 text-orange-500">
+                                                            <Icons.Fire />
+                                                            <span className="font-bold">{habito.racha}</span>
+                                                            <span className="text-xs text-gray-500">días</span>
+                                                        </div>
+                                                    )}
+                                                    {habito.mejorRacha > 0 && (
+                                                        <div className="flex items-center gap-1 text-yellow-500">
+                                                            <Icons.Star />
+                                                            <span className="text-xs">Mejor: {habito.mejorRacha}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={() => eliminarHabito(habito.id)}
+                                                className="text-gray-400 hover:text-red-500 p-2"
+                                            >
+                                                <Icons.Trash />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Botón agregar */}
+                        {!showAddHabito ? (
+                            <button
+                                onClick={() => setShowAddHabito(true)}
+                                className="w-full bg-indigo-500 text-white rounded-xl p-4 font-semibold hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2 shadow-md"
+                            >
+                                <Icons.Plus />
+                                Agregar Hábito
+                            </button>
+                        ) : (
+                            <div className="bg-white rounded-xl p-4 shadow-md animate-slide-in">
+                                <input
+                                    type="text"
+                                    value={newHabito}
+                                    onChange={(e) => setNewHabito(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && agregarHabito()}
+                                    placeholder="Ej: Hacer ejercicio, Leer 30 min..."
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none mb-3"
+                                    autoFocus
+                                />
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={agregarHabito}
+                                        className="flex-1 bg-indigo-500 text-white rounded-lg py-2 font-semibold hover:bg-indigo-600"
+                                    >
+                                        Guardar
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowAddHabito(false);
+                                            setNewHabito('');
+                                        }}
+                                        className="px-6 bg-gray-200 text-gray-700 rounded-lg py-2 font-semibold hover:bg-gray-300"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // Componente de Proyectos
+            const ProyectosView = () => {
+                return (
+                    <div className="space-y-4">
+                        {/* Header con frase estoica del día */}
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg">
+                            <div className="flex items-start gap-3 mb-3">
+                                <div className="text-3xl">🏛️</div>
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-lg mb-1">Frase del día</h3>
+                                    <p className="text-emerald-50 italic leading-relaxed">
+                                        "{fraseDelDia.frase}"
+                                    </p>
+                                    <p className="text-emerald-100 text-sm mt-2">— {fraseDelDia.autor}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Resumen */}
+                        <div className="bg-white rounded-2xl p-4 shadow-md">
+                            <h2 className="text-xl font-bold text-gray-800 mb-1">Mis Proyectos</h2>
+                            <p className="text-sm text-gray-600">
+                                {proyectos.length} {proyectos.length === 1 ? 'proyecto activo' : 'proyectos activos'}
+                            </p>
+                        </div>
+
+                        {/* Lista de proyectos */}
+                        <div className="space-y-3">
+                            {proyectos.map(proyecto => {
+                                const tareasCompletadas = proyecto.tareas.filter(t => t.completada).length;
+                                const totalTareas = proyecto.tareas.length;
+                                const porcentaje = totalTareas > 0 ? Math.round((tareasCompletadas / totalTareas) * 100) : 0;
+                                const estaExpandido = proyectoExpandido === proyecto.id;
+
+                                return (
+                                    <div key={proyecto.id} className="bg-white rounded-xl shadow-md overflow-hidden animate-slide-in">
+                                        {/* Header del proyecto */}
+                                        <div className="p-4">
+                                            <div className="flex items-start gap-3">
+                                                <button
+                                                    onClick={() => setProyectoExpandido(estaExpandido ? null : proyecto.id)}
+                                                    className="text-emerald-600 mt-1 transition-transform"
+                                                    style={{ transform: estaExpandido ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                                                >
+                                                    <Icons.ChevronDown />
+                                                </button>
+                                                
+                                                <div className="flex-1">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex-1">
+                                                            <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                                                                <Icons.Folder />
+                                                                {proyecto.nombre}
+                                                            </h3>
+                                                            {proyecto.descripcion && (
+                                                                <p className="text-sm text-gray-600 mt-1">{proyecto.descripcion}</p>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => eliminarProyecto(proyecto.id)}
+                                                            className="text-gray-400 hover:text-red-500 p-1 ml-2"
+                                                        >
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Progreso */}
+                                                    <div className="mt-3">
+                                                        <div className="flex items-center justify-between text-sm mb-1">
+                                                            <span className="text-gray-600">
+                                                                {tareasCompletadas} de {totalTareas} tareas
+                                                            </span>
+                                                            <span className="font-semibold text-emerald-600">{porcentaje}%</span>
+                                                        </div>
+                                                        <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                            <div 
+                                                                className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full transition-all duration-500 rounded-full"
+                                                                style={{ width: `${porcentaje}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Tareas del proyecto (expandible) */}
+                                        {estaExpandido && (
+                                            <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-2">
+                                                {proyecto.tareas.map(tarea => (
+                                                    <div key={tarea.id} className="bg-white rounded-lg p-3 flex items-center gap-3 shadow-sm">
+                                                        <button
+                                                            onClick={() => toggleTareaProyecto(proyecto.id, tarea.id)}
+                                                            className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                                                tarea.completada
+                                                                    ? 'bg-emerald-500 border-emerald-500 text-white'
+                                                                    : 'border-gray-300 hover:border-emerald-500'
+                                                            }`}
+                                                        >
+                                                            {tarea.completada && <Icons.Check />}
+                                                        </button>
+                                                        <span className={`flex-1 ${tarea.completada ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                                                            {tarea.texto}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => eliminarTareaProyecto(proyecto.id, tarea.id)}
+                                                            className="text-gray-400 hover:text-red-500 p-1"
+                                                        >
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    </div>
+                                                ))}
+
+                                                {/* Agregar nueva tarea al proyecto */}
+                                                <div className="flex gap-2 mt-3">
+                                                    <input
+                                                        type="text"
+                                                        value={nuevaTareaProyecto[proyecto.id] || ''}
+                                                        onChange={(e) => setNuevaTareaProyecto({
+                                                            ...nuevaTareaProyecto,
+                                                            [proyecto.id]: e.target.value
+                                                        })}
+                                                        onKeyPress={(e) => {
+                                                            if (e.key === 'Enter') agregarTareaAProyecto(proyecto.id);
+                                                        }}
+                                                        placeholder="Nueva tarea..."
+                                                        className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none text-sm"
+                                                    />
+                                                    <button
+                                                        onClick={() => agregarTareaAProyecto(proyecto.id)}
+                                                        className="bg-emerald-500 text-white px-4 rounded-lg hover:bg-emerald-600 transition-colors"
+                                                    >
+                                                        <Icons.Plus />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Botón agregar proyecto */}
+                        {!showAddProyecto ? (
+                            <button
+                                onClick={() => setShowAddProyecto(true)}
+                                className="w-full bg-emerald-500 text-white rounded-xl p-4 font-semibold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2 shadow-md"
+                            >
+                                <Icons.Plus />
+                                Nuevo Proyecto
+                            </button>
+                        ) : (
+                            <div className="bg-white rounded-xl p-4 shadow-md animate-slide-in">
+                                <input
+                                    type="text"
+                                    value={newProyecto.nombre}
+                                    onChange={(e) => setNewProyecto({ ...newProyecto, nombre: e.target.value })}
+                                    placeholder="Nombre del proyecto..."
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none mb-3"
+                                    autoFocus
+                                />
+                                <textarea
+                                    value={newProyecto.descripcion}
+                                    onChange={(e) => setNewProyecto({ ...newProyecto, descripcion: e.target.value })}
+                                    placeholder="Descripción (opcional)..."
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none mb-3 resize-none"
+                                    rows="2"
+                                />
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={agregarProyecto}
+                                        className="flex-1 bg-emerald-500 text-white rounded-lg py-2 font-semibold hover:bg-emerald-600"
+                                    >
+                                        Crear Proyecto
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowAddProyecto(false);
+                                            setNewProyecto({ nombre: '', descripcion: '' });
+                                        }}
+                                        className="px-6 bg-gray-200 text-gray-700 rounded-lg py-2 font-semibold hover:bg-gray-300"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // Componente de Tareas
+            const TareasView = () => {
+                const tareasActivas = tareas.filter(t => !t.completada);
+                const tareasCompletadas = tareas.filter(t => t.completada);
+
+                const getPrioridadColor = (prioridad) => {
+                    switch(prioridad) {
+                        case 'alta': return 'border-l-4 border-red-500';
+                        case 'media': return 'border-l-4 border-yellow-500';
+                        case 'baja': return 'border-l-4 border-green-500';
+                        default: return '';
+                    }
+                };
+
+                const getPrioridadBadge = (prioridad) => {
+                    const colors = {
+                        alta: 'bg-red-100 text-red-700',
+                        media: 'bg-yellow-100 text-yellow-700',
+                        baja: 'bg-green-100 text-green-700'
+                    };
+                    return (
+                        <span className={`text-xs px-2 py-1 rounded-full ${colors[prioridad]}`}>
+                            {prioridad.charAt(0).toUpperCase() + prioridad.slice(1)}
+                        </span>
+                    );
+                };
+
+                return (
+                    <div className="space-y-4">
+                        {/* Resumen */}
+                        <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-2xl p-6 text-white shadow-lg">
+                            <h2 className="text-2xl font-bold mb-2">Tareas</h2>
+                            <p className="text-blue-100">
+                                {tareasActivas.length} pendientes · {tareasCompletadas.length} completadas
+                            </p>
+                        </div>
+
+                        {/* Tareas pendientes */}
+                        {tareasActivas.length > 0 && (
+                            <div className="space-y-3">
+                                {tareasActivas
+                                    .sort((a, b) => {
+                                        const prioridades = { alta: 0, media: 1, baja: 2 };
+                                        return prioridades[a.prioridad] - prioridades[b.prioridad];
+                                    })
+                                    .map(tarea => (
+                                        <div 
+                                            key={tarea.id}
+                                            className={`bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all animate-slide-in ${getPrioridadColor(tarea.prioridad)}`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <button
+                                                    onClick={() => toggleTarea(tarea.id)}
+                                                    className="flex-shrink-0 w-6 h-6 rounded border-2 border-gray-300 hover:border-blue-500 mt-0.5"
+                                                />
+                                                <div className="flex-1">
+                                                    <p className="text-gray-800 font-medium">{tarea.texto}</p>
+                                                    <div className="mt-2">
+                                                        {getPrioridadBadge(tarea.prioridad)}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => eliminarTarea(tarea.id)}
+                                                    className="text-gray-400 hover:text-red-500 p-1"
+                                                >
+                                                    <Icons.Trash />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+                        )}
+
+                        {/* Tareas completadas */}
+                        {tareasCompletadas.length > 0 && (
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-semibold text-gray-500 px-2">COMPLETADAS</h3>
+                                {tareasCompletadas.map(tarea => (
+                                    <div 
+                                        key={tarea.id}
+                                        className="bg-gray-50 rounded-xl p-4 opacity-60"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => toggleTarea(tarea.id)}
+                                                className="flex-shrink-0 w-6 h-6 rounded bg-green-500 flex items-center justify-center text-white"
+                                            >
+                                                <Icons.Check />
+                                            </button>
+                                            <p className="flex-1 text-gray-500 line-through">{tarea.texto}</p>
+                                            <button
+                                                onClick={() => eliminarTarea(tarea.id)}
+                                                className="text-gray-400 hover:text-red-500 p-1"
+                                            >
+                                                <Icons.Trash />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Botón agregar */}
+                        {!showAddTarea ? (
+                            <button
+                                onClick={() => setShowAddTarea(true)}
+                                className="w-full bg-blue-500 text-white rounded-xl p-4 font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 shadow-md"
+                            >
+                                <Icons.Plus />
+                                Agregar Tarea
+                            </button>
+                        ) : (
+                            <div className="bg-white rounded-xl p-4 shadow-md animate-slide-in">
+                                <input
+                                    type="text"
+                                    value={newTarea.texto}
+                                    onChange={(e) => setNewTarea({ ...newTarea, texto: e.target.value })}
+                                    onKeyPress={(e) => e.key === 'Enter' && agregarTarea()}
+                                    placeholder="Describe tu tarea..."
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none mb-3"
+                                    autoFocus
+                                />
+                                <div className="flex gap-2 mb-3">
+                                    {['alta', 'media', 'baja'].map(p => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setNewTarea({ ...newTarea, prioridad: p })}
+                                            className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
+                                                newTarea.prioridad === p
+                                                    ? p === 'alta' ? 'bg-red-500 text-white'
+                                                    : p === 'media' ? 'bg-yellow-500 text-white'
+                                                    : 'bg-green-500 text-white'
+                                                    : 'bg-gray-100 text-gray-600'
+                                            }`}
+                                        >
+                                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={agregarTarea}
+                                        className="flex-1 bg-blue-500 text-white rounded-lg py-2 font-semibold hover:bg-blue-600"
+                                    >
+                                        Guardar
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowAddTarea(false);
+                                            setNewTarea({ texto: '', prioridad: 'media' });
+                                        }}
+                                        className="px-6 bg-gray-200 text-gray-700 rounded-lg py-2 font-semibold hover:bg-gray-300"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // Componente de Estadísticas
+            const EstadisticasView = () => {
+                const totalHabitos = habitos.length;
+                const totalTareas = tareas.length;
+                const tareasCompletadas = tareas.filter(t => t.completada).length;
+                const rachaMaxima = Math.max(...habitos.map(h => h.mejorRacha), 0);
+                const totalProyectos = proyectos.length;
+                const totalTareasProyectos = proyectos.reduce((acc, p) => acc + p.tareas.length, 0);
+                const tareasProyectosCompletadas = proyectos.reduce((acc, p) => 
+                    acc + p.tareas.filter(t => t.completada).length, 0
+                );
+                
+                const ultimosDias = 7;
+                const estadisticasDias = [];
+                for (let i = ultimosDias - 1; i >= 0; i--) {
+                    const fecha = new Date();
+                    fecha.setDate(fecha.getDate() - i);
+                    const fechaStr = fecha.toDateString();
+                    const completados = habitos.filter(h => h.completado[fechaStr]).length;
+                    estadisticasDias.push({
+                        dia: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][fecha.getDay()],
+                        porcentaje: totalHabitos > 0 ? (completados / totalHabitos) * 100 : 0
+                    });
+                }
+
+                return (
+                    <div className="space-y-4">
+                        <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
+                            <h2 className="text-2xl font-bold mb-2">Tus Estadísticas</h2>
+                            <p className="text-purple-100">Tu progreso en números</p>
+                        </div>
+
+                        {/* Tarjetas de estadísticas */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white rounded-xl p-4 shadow-md">
+                                <div className="text-3xl font-bold text-indigo-600">{totalHabitos}</div>
+                                <div className="text-sm text-gray-600 mt-1">Hábitos Activos</div>
+                            </div>
+                            <div className="bg-white rounded-xl p-4 shadow-md">
+                                <div className="text-3xl font-bold text-orange-600 flex items-center gap-1">
+                                    {rachaMaxima}
+                                    <Icons.Fire />
+                                </div>
+                                <div className="text-sm text-gray-600 mt-1">Mejor Racha</div>
+                            </div>
+                            <div className="bg-white rounded-xl p-4 shadow-md">
+                                <div className="text-3xl font-bold text-emerald-600">{totalProyectos}</div>
+                                <div className="text-sm text-gray-600 mt-1">Proyectos</div>
+                            </div>
+                            <div className="bg-white rounded-xl p-4 shadow-md">
+                                <div className="text-3xl font-bold text-blue-600">{tareasCompletadas + tareasProyectosCompletadas}</div>
+                                <div className="text-sm text-gray-600 mt-1">Tareas Hechas</div>
+                            </div>
+                        </div>
+
+                        {/* Progreso de proyectos */}
+                        {totalProyectos > 0 && (
+                            <div className="bg-white rounded-xl p-4 shadow-md">
+                                <h3 className="font-bold text-lg mb-3 text-gray-800">Proyectos en curso</h3>
+                                <div className="space-y-3">
+                                    {proyectos.map(proyecto => {
+                                        const tareasComp = proyecto.tareas.filter(t => t.completada).length;
+                                        const totalTar = proyecto.tareas.length;
+                                        const porc = totalTar > 0 ? Math.round((tareasComp / totalTar) * 100) : 0;
+                                        
+                                        return (
+                                            <div key={proyecto.id}>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-sm font-medium text-gray-700">{proyecto.nombre}</span>
+                                                    <span className="text-sm font-bold text-emerald-600">{porc}%</span>
+                                                </div>
+                                                <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                    <div 
+                                                        className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full transition-all duration-500"
+                                                        style={{ width: `${porc}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Gráfico de últimos 7 días */}
+                        <div className="bg-white rounded-xl p-6 shadow-md">
+                            <h3 className="font-bold text-lg mb-4 text-gray-800">Hábitos - Últimos 7 días</h3>
+                            <div className="flex items-end justify-between gap-2 h-32">
+                                {estadisticasDias.map((dia, idx) => (
+                                    <div key={idx} className="flex-1 flex flex-col items-center gap-2">
+                                        <div className="w-full bg-gray-100 rounded-t-lg relative" style={{ height: '100px' }}>
+                                            <div 
+                                                className="absolute bottom-0 w-full bg-gradient-to-t from-indigo-500 to-purple-500 rounded-t-lg transition-all duration-500"
+                                                style={{ height: `${dia.porcentaje}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-xs text-gray-600 font-medium">{dia.dia}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Mensaje motivacional con frase estoica */}
+                        <div className="bg-gradient-to-r from-amber-400 to-orange-500 rounded-xl p-6 text-white">
+                            <div className="mb-4">
+                                <div className="text-3xl mb-2">🏛️</div>
+                                <p className="italic leading-relaxed text-amber-50">
+                                    "{fraseDelDia.frase}"
+                                </p>
+                                <p className="text-sm mt-2 text-amber-100">— {fraseDelDia.autor}</p>
+                            </div>
+                            <div className="border-t border-amber-300 pt-4">
+                                <h3 className="font-bold text-xl mb-2">
+                                    {rachaMaxima > 7 ? '¡Increíble!' : rachaMaxima > 3 ? '¡Vas muy bien!' : '¡Sigue así!'}
+                                </h3>
+                                <p className="text-amber-50">
+                                    {rachaMaxima > 7 
+                                        ? 'Tu disciplina es admirable. ¡No te detengas!'
+                                        : rachaMaxima > 3
+                                        ? 'Estás construyendo grandes hábitos'
+                                        : 'Cada día cuenta. ¡Tú puedes!'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen pb-24">
+                    {/* Header */}
+                    <div className="bg-white shadow-md sticky top-0 z-10">
+                        <div className="max-w-2xl mx-auto px-4 py-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-800">Mi Disciplina</h1>
+                                    <p className="text-sm text-gray-600">Construye la mejor versión de ti</p>
+                                </div>
+                                {/* Indicador de sincronización */}
+                                <div className="flex items-center gap-2">
+                                    {syncStatus === 'local' && (
+                                        <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+                                            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                                            <span>Local</span>
+                                        </div>
+                                    )}
+                                    {syncStatus === 'syncing' && (
+                                        <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                            <span>Sincronizando...</span>
+                                        </div>
+                                    )}
+                                    {syncStatus === 'synced' && (
+                                        <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-3 py-1.5 rounded-full">
+                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                            <span>Sincronizado</span>
+                                        </div>
+                                    )}
+                                    {syncStatus === 'error' && (
+                                        <div className="flex items-center gap-1 text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-full">
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>Error</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Pantalla de carga durante autenticación */}
+                    {isAuthenticating && firebaseEnabled ? (
+                        <div className="flex items-center justify-center min-h-[60vh]">
+                        {/* Pantalla de carga durante autenticación */}
+                    {isAuthenticating && firebaseEnabled ? (
+                        <div className="flex items-center justify-center min-h-[60vh]">
+                            <div className="text-center">
+                                <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                <p className="text-gray-600">Conectando con la nube...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Contenido principal */}
+                            <div className="max-w-2xl mx-auto px-4 py-6">
+                                {activeTab === 'habitos' && <HabitosView />}
+                                {activeTab === 'proyectos' && <ProyectosView />}
+                                {activeTab === 'tareas' && <TareasView />}
+                                {activeTab === 'estadisticas' && <EstadisticasView />}
+                            </div>
+
+                            {/* Bottom Navigation */}
+                            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+                                <div className="max-w-2xl mx-auto px-2 py-2">
+                                    <div className="flex justify-around">
+                                        <button
+                                            onClick={() => setActiveTab('habitos')}
+                                            className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+                                                activeTab === 'habitos'
+                                                    ? 'text-indigo-600 bg-indigo-50'
+                                                    : 'text-gray-600'
+                                            }`}
+                                        >
+                                            <Icons.Target />
+                                            <span className="text-xs mt-1 font-medium">Hábitos</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('proyectos')}
+                                            className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+                                                activeTab === 'proyectos'
+                                                    ? 'text-emerald-600 bg-emerald-50'
+                                                    : 'text-gray-600'
+                                            }`}
+                                        >
+                                            <Icons.Folder />
+                                            <span className="text-xs mt-1 font-medium">Proyectos</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('tareas')}
+                                            className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+                                                activeTab === 'tareas'
+                                                    ? 'text-blue-600 bg-blue-50'
+                                                    : 'text-gray-600'
+                                            }`}
+                                        >
+                                            <Icons.Calendar />
+                                            <span className="text-xs mt-1 font-medium">Tareas</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('estadisticas')}
+                                            className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+                                                activeTab === 'estadisticas'
+                                                    ? 'text-purple-600 bg-purple-50'
+                                                    : 'text-gray-600'
+                                            }`}
+                                        >
+                                            <Icons.Chart />
+                                            <span className="text-xs mt-1 font-medium">Stats</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        // Renderizar la aplicación
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZnVuY3Rpb24oZXZlbnQpIHsKICBzZWxmLnNraXBXYWl0aW5nKCk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCdhY3RpdmF0ZScsIGZ1bmN0aW9uKGV2ZW50KSB7CiAgcmV0dXJuIHNlbGYuY2xpZW50cy5jbGFpbSgpOwp9KTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcignZmV0Y2gnLCBmdW5jdGlvbihldmVudCkgewogIGV2ZW50LnJlc3BvbmRXaXRoKGZldGNoKGV2ZW50LnJlcXVlc3QpKTsKfSk7');
+            });
+        }
+    </script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</body>
+</html>
